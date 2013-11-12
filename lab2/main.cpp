@@ -25,7 +25,7 @@ int main() {
 	close(server_descriptor);
     return 0;
   }
-  if (listen(server_descriptor,1) == -1){
+  if (listen(server_descriptor,1) == -1) {
     cout<<("Listen error.\n");
 	close(server_descriptor);
 	return 0;
@@ -34,7 +34,7 @@ int main() {
 
   while(1) {
     client_descriptor = accept(server_descriptor,NULL,NULL);
-	if(client_descriptor < 0){
+	if(client_descriptor < 0) {
 	  cout<<"Accept error.\n";
 	  close(server_descriptor);
 	  return 0;
