@@ -68,7 +68,6 @@ int main(int argc,char *argv[]) {
           memset (buffer,0,kBufferSize);
           recv (client_descriptor, buffer, kBufferSize,0);
           file_stream << buffer;
-          send (client_descriptor, buffer, kBufferSize,0);
           temp += kBufferSize;
           cout << "\n";
           cout << temp;
