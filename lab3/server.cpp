@@ -74,9 +74,6 @@ int main(int argc,char *argv[]) {
     memset (buffer,0,kBufferSize);
     file_stream.read (buffer, kBufferSize);
     send (client_descriptor,buffer,kBufferSize,0);
-    send (client_descriptor,buffer,kBufferSize,0);
-    memset (buffer,0,kBufferSize);
-
     recv (client_descriptor, buffer, kBufferSize,0);
   }
 
