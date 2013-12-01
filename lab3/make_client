@@ -1,2 +1,0 @@
-client:
-	g++ server.cpp -o client
