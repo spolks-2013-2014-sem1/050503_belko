@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include <unistd.h>
+#include <sys/time.h>
 
 using namespace std;
 
@@ -16,25 +17,26 @@ int showErrorMessage(const char* message){
   return 0;
 }
 
-
-
 int main(int argc,char *argv[]) {
 
-  int client_descriptor;
+  int client_descriptor, n = 1, temp = 1;
   struct sockaddr_in client_address;
-  const int kBufferSize = 8;
+  struct timespec timeout;
+  const int kBufferSize = 128;
   char buffer[kBufferSize];
-  int temp = 0;
-  long file_size = 0;
   ofstream file_stream;
+  timeout.tv_sec = 8;
+  timeout.tv_nsec = 0;
+  fd_set server_fds;
 
   if (argc < 2) {
     return showErrorMessage("Error: no path to save file.\n");
   }
 
   file_stream.open(argv[1],ios::binary);
-
   client_descriptor = socket(AF_INET,SOCK_STREAM, 0);
+  FD_ZERO(&server_fds);
+  FD_SET(client_descriptor, &server_fds);
   if (client_descriptor == -1) {
     return showErrorMessage("Unable to create socket.\n");
   }
@@ -46,38 +48,30 @@ int main(int argc,char *argv[]) {
     return showErrorMessage("inet_pton error\n");
   }
 
-  cout << "looking for server\n";
   while(1) {
     if (connect (client_descriptor, (const sockaddr*) &client_address,
                  sizeof (client_address)) == -1) {
       continue;
-
     } else {
-        cout << "connected\n";
-        memset (buffer,0,kBufferSize);
+        while  (n > 0) {
+          temp = pselect (client_descriptor + 1, &server_fds,
+                         NULL, NULL, &timeout, NULL);
+          if (temp == 0 || temp == -1){
+            close(client_descriptor);
+            file_stream.close();
+            return showErrorMessage("connection lost\n");
+          }
+          n = recv (client_descriptor, buffer, kBufferSize,0);
+          file_stream.write (buffer, kBufferSize);
 
-        recv (client_descriptor,buffer,kBufferSize,0);
-
-        file_size = strtol (buffer, NULL, 10);
-        cout << file_size;
-        send (client_descriptor, buffer, kBufferSize,0);
-        cout << "recieving started\n";
-
-        while  (temp < file_size) {
-
-          memset (buffer,0,kBufferSize);
-          recv (client_descriptor, buffer, kBufferSize,0);
-          file_stream << buffer;
-          temp += kBufferSize;
-          cout << "\n";
-          cout << temp;
+        }
+        if (n == -1){
+         return showErrorMessage("recieve error\n");
         }
       }
-
     break;
   }
 
-  cout << "file saved.\n";
   file_stream.close();
   close(client_descriptor);
   return 0;
