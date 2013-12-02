@@ -53,7 +53,7 @@ int main(int argc,char *argv[]) {
                  sizeof (client_address)) == -1) {
       continue;
     } else {
-        while  (n > 0) {
+        while  ((n = recv (client_descriptor, buffer, kBufferSize,0)) > 0) {
           temp = pselect (client_descriptor + 1, &server_fds,
                          NULL, NULL, &timeout, NULL);
           if (temp == 0 || temp == -1){
@@ -61,9 +61,7 @@ int main(int argc,char *argv[]) {
             file_stream.close();
             return showErrorMessage("connection lost\n");
           }
-          n = recv (client_descriptor, buffer, kBufferSize,0);
-          file_stream.write (buffer, kBufferSize);
-
+          file_stream.write (buffer, n);
         }
         if (n == -1){
          return showErrorMessage("recieve error\n");
