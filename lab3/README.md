@@ -1,4 +1,4 @@
-###File sending server.
+###Filesending server.
 
 1. Open server with name of file to send.
 Ex.: "./server file1.txt"
@@ -6,4 +6,4 @@ Ex.: "./server file1.txt"
 2. Open client with name of file to save.
 Ex.: "./client file2.txt"
 
-#Timeout: 8 sec.
+##Timeout: 8 sec.
