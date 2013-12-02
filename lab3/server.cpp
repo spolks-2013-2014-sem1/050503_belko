@@ -17,7 +17,6 @@ int showErrorMessage (const char* message){
 
 
 int main(int argc,char *argv[]) {
-
   int server_descriptor, client_descriptor, temp = 1;
   struct sockaddr_in server_address;
   const int kBufferSize = 128;
@@ -30,17 +29,11 @@ int main(int argc,char *argv[]) {
   if (argc < 2) {
     return showErrorMessage ("Error: no path to save file.\n");
   }
-  ifstream file_stream (argv[1], ios::in|ios::ate|ios::binary);
-  if (!file_stream.is_open()){
-    return showErrorMessage ("Can't open file.\n");
-  }
-
   int yes=1;
   server_descriptor = socket (AF_INET, SOCK_STREAM, 0);
   if (server_descriptor == -1) {
     return showErrorMessage ("Unable to create socket.\n");
   }
-
   if (setsockopt(server_descriptor, SOL_SOCKET,
                  SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
     showErrorMessage ("setsockopt error");
@@ -54,31 +47,33 @@ int main(int argc,char *argv[]) {
              sizeof(server_address)) == -1) {
     return showErrorMessage ("Binding error.\n");
   }
-
-  listen(server_descriptor,1);
-  client_descriptor = accept (server_descriptor,NULL,NULL);
-  if (client_descriptor == -1) {
-    close (server_descriptor);
-    return showErrorMessage ("Accept error.\n");
-  }
-  FD_ZERO(&server_fds);
-  FD_SET(client_descriptor, &server_fds);
-  file_stream.seekg (0, ios::beg);
-
-  while (file_stream.tellg() != -1) {
-    temp = pselect (client_descriptor + 1, NULL, &server_fds,
-                          NULL, &timeout, NULL);
-    if (temp == 0 || temp == -1){
-      close(server_descriptor);
-      file_stream.close();
-      return showErrorMessage("connection lost\n");
+  while(1) {
+    listen(server_descriptor,1);
+    ifstream file_stream (argv[1], ios::in|ios::ate|ios::binary);
+    if (!file_stream.is_open()){
+      return showErrorMessage ("Can't open file.\n");
     }
-    file_stream.read (buffer, kBufferSize);
-    send (client_descriptor,buffer,kBufferSize,0);
-  }
+    client_descriptor = accept (server_descriptor,NULL,NULL);
+    if (client_descriptor == -1) {
+      close (server_descriptor);
+      return showErrorMessage ("Accept error.\n");
+    }
+    FD_ZERO(&server_fds);
+    FD_SET(client_descriptor, &server_fds);
+    file_stream.seekg (0, ios::beg);
 
-  file_stream.close();
-  close(client_descriptor);
-  close(server_descriptor);
-  return 0;
+    while (file_stream.tellg() != -1) {
+      temp = pselect (client_descriptor + 1, NULL, &server_fds,
+                          NULL, &timeout, NULL);
+      if (temp == 0 || temp == -1){
+        close(server_descriptor);
+        file_stream.close();
+        return showErrorMessage("connection lost\n");
+      }
+      file_stream.read (buffer, kBufferSize);
+      send (client_descriptor,buffer,kBufferSize,0);
+    }
+    file_stream.close();
+    close(client_descriptor);
+  }
 }
