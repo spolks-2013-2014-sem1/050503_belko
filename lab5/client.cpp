@@ -94,8 +94,21 @@ int GetFileUDP(int socket, FILE *pfile, struct sockaddr_in address, int file_len
   socklen_t len = sizeof(address);
   int n = 0, bytes_read = 0, temp = 0;
   char buffer[kBufferSize];
+  struct timespec timeout;
+  fd_set server_fds;
+  timeout.tv_sec = 8;
+  timeout.tv_nsec = 0;
+
+  FD_ZERO(&server_fds);
+  FD_SET(socket, &server_fds);
 
   while (1) {
+    temp = pselect (socket + 1, &server_fds, NULL,
+                          NULL, &timeout, NULL);
+      if (temp == 0 || temp == -1){
+        close(socket);
+        return showErrorMessage("connection lost\n");
+      }
 
     n = recv(socket, buffer, kBufferSize, 0);
     fwrite (buffer, n, 1, pfile);

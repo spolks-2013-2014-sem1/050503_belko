@@ -94,18 +94,29 @@ int SendFileUDP(int socket,FILE *pfile,struct sockaddr_in client_address) {
   socklen_t len = sizeof(client_address);
   char buffer[kBufferSize];
   int n = 0, temp = 0, n2 = 0;
+  struct timespec timeout;
+  fd_set server_fds;
+  timeout.tv_sec = 8;
+  timeout.tv_nsec = 0;
+
+  FD_ZERO(&server_fds);
+  FD_SET(socket, &server_fds);
 
   while (!feof(pfile)) {
     n = fread (buffer, 1, sizeof(buffer), pfile);
 
-    if(n != 0){
-
+    if(n != 0) {
       n = sendto(socket,buffer, n, 0, (sockaddr *) &client_address, len);
       if (n < 0) {
         return showErrorMessage("sending failed\n");
       }
-
-       recv(socket, buffer, 1, 0);
+      temp = pselect (socket + 1, &server_fds, NULL,
+                          NULL, &timeout, NULL);
+      if (temp == 0 || temp == -1){
+        close(socket);
+        return showErrorMessage("connection lost\n");
+      }
+      recv(socket, buffer, 1, 0);
       if (buffer[0] != 'q'){
         return showErrorMessage("recieve error\n");
       }
@@ -174,19 +185,17 @@ int StartUDPServer(char *file_name) {
     return showErrorMessage("bindingError\n");
   }
 
-  recvfrom (server_descriptor, buffer, 1,
+  while (1){
+    recvfrom (server_descriptor, buffer, 1,
                        0, (struct sockaddr *) &client_address, &len);
 
-  sendto (server_descriptor, Itoa (GetFileLength (pfile)),
+    sendto (server_descriptor, Itoa (GetFileLength (pfile)),
           20, 0, (sockaddr *) &client_address, len);
 
-  if (SendFileUDP (server_descriptor, pfile, client_address) == -1){
-    return -1;
+    if (SendFileUDP (server_descriptor, pfile, client_address) == -1){
+      return -1;
+    }
   }
-
-  fclose (pfile);
-  close(server_descriptor);
-  return 0;
 }
 
 
