@@ -10,7 +10,7 @@
 #include <poll.h>
 
 using namespace std;
-const int kBufferSize = 1024;
+const int kBufferSize = 256;
 const int kMaxClients = 15;
 
 int showErrorMessage (const char* message){
@@ -46,7 +46,7 @@ int StartTCPMultiplexedServer (int server_descriptor, pollfd clients[],
   file_length = GetFileLength (pfile);
 
   while (1) {
-    rdy_descriptors = poll (clients, maxfd + 1, 100);
+    rdy_descriptors = poll (clients, maxfd + 1, 0);
 
     if (clients[0].revents & POLLIN) {
       client_descriptor = accept (server_descriptor,
@@ -67,7 +67,6 @@ int StartTCPMultiplexedServer (int server_descriptor, pollfd clients[],
       if (i > connected_clients) {
         connected_clients = i;
       }
-      printf ("%i\n",i);
       if (--rdy_descriptors <= 0) {
         continue;
       }
