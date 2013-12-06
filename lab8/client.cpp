@@ -23,7 +23,7 @@ int main(int argc,char *argv[]) {
   int client_descriptor, n = 1, temp = 1;
   struct sockaddr_in client_address;
   struct timespec timeout;
-  const int kBufferSize = 1024;
+  const int kBufferSize = 512;
   char buffer[kBufferSize];
   FILE *pfile;
 
@@ -55,7 +55,6 @@ int main(int argc,char *argv[]) {
                  sizeof (client_address)) == -1) {
       continue;
     } else {
-     cout << "connected\n";
         while  ((n = recv (client_descriptor, buffer, kBufferSize,0)) > 0) {
           temp = pselect (client_descriptor + 1, &server_fds,
                          NULL, NULL, &timeout, NULL);
